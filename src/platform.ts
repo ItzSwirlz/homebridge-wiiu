@@ -87,13 +87,11 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
     for (const device of exampleDevices) {
       // use the device serial
       let serial = ''
-      this.log.info("hi");
       axios.post('http://' + device.exampleIP + "/serial").then(function (response) {
         serial = response.statusText;
       });
       const uuid = this.api.hap.uuid.generate(serial);
 
-      this.log.info("hi again");
       // see if an accessory with the same uuid has already been registered and restored from
       // the cached devices we stored in the `configureAccessory` method above
       const existingAccessory = this.accessories.find(

@@ -16,15 +16,6 @@ import type { WiiUPlatform } from "./platform.js";
 export class WiiUPlatformAccessory {
   private service: Service;
 
-  /**
-   * These are just used to create a working example
-   * You should implement your own code to track the state of your accessory
-   */
-  private exampleStates = {
-    On: false,
-    Brightness: 100,
-  };
-
   constructor(
     private readonly platform: WiiUPlatform,
     private readonly accessory: PlatformAccessory,
@@ -34,7 +25,7 @@ export class WiiUPlatformAccessory {
       .getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(
         this.platform.Characteristic.Manufacturer,
-        "Default-Manufacturer",
+        "Nintendo", // i dont think any wii u will have any other value
       )
       .setCharacteristic(this.platform.Characteristic.Model, "Default-Model")
       .setCharacteristic(
@@ -42,85 +33,45 @@ export class WiiUPlatformAccessory {
         this.accessory.UUID,
       );
 
-    // get the LightBulb service if it exists, otherwise create a new LightBulb service
-    // you can create multiple services for each accessory
     this.service =
       this.accessory.getService(this.platform.Service.Switch) ||
       this.accessory.addService(this.platform.Service.Switch);
 
-    // TODO: is there a better service that is just a "toggle switch?"
-    const rebootService =
-      this.accessory.getService("Reboot Console") ||
-      this.accessory.addService(this.platform.Service.Switch, 'Reboot Console', 'reboot-wiiu');
-
-    rebootService.setCharacteristic(this.platform.Characteristic.Name, 'Reboot Wii U');
-
-
-    // set the service name, this is what is displayed as the default name on the Home app
-    // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
     this.service.setCharacteristic(
       this.platform.Characteristic.Name,
       accessory.context.device.exampleDisplayName,
     );
 
-    // each service must implement at-minimum the "required characteristics" for the given service type
-    // see https://developers.homebridge.io/#/service/Lightbulb
+    // TODO: Is there something better we can use here?
+    this.service.getCharacteristic(this.platform.Characteristic.On).onSet(this.handleOnSetShutdown.bind(this));
 
-    // register handlers for the On/Off Characteristic
-    this.service
-      .getCharacteristic(this.platform.Characteristic.On)
-      .onSet(this.setOn.bind(this)) // SET - bind to the `setOn` method below
-      .onGet(this.getOn.bind(this)); // GET - bind to the `getOn` method below
-
-    // register handlers for the Brightness Characteristic
-    this.service
-      .getCharacteristic(this.platform.Characteristic.Brightness)
-      .onSet(this.setBrightness.bind(this)); // SET - bind to the 'setBrightness` method below
-
+    // TODO: is there a better service that is just a "toggle switch?"
+    const rebootService =
+      this.accessory.getService("Reboot Console") ||
+      this.accessory.addService(this.platform.Service.Switch, 'Reboot Console', 'reboot-wiiu');
+    rebootService.setCharacteristic(this.platform.Characteristic.Name, 'Reboot Wii U');
     rebootService.getCharacteristic(this.platform.Characteristic.On).onSet(this.handleOnSetReboot.bind(this));
 
-    /**
-     * Updating characteristics values asynchronously.
-     *
-     * Example showing how to update the state of a Characteristic asynchronously instead
-     * of using the `on('get')` handlers.
-     * Here we change update the motion sensor trigger states on and off every 10 seconds
-     * the `updateCharacteristic` method.
-     *
-     */
-    let motionDetected = false;
     setInterval(() => {
-      // EXAMPLE - inverse the trigger
-      motionDetected = !motionDetected;
+      // TODO: If the Wii U does not respond, say it is inactive.
+      // If it is active and receiving responses, the only thing we can really do is
+      // tell the Wii U to turn off.. so that's all we will do here]
+      this.service.updateCharacteristic(this.platform.Characteristic.Active, this.platform.Characteristic.Active.ACTIVE);
 
       // FIXME: again: can we just get a push button for this or something?
       rebootService.updateCharacteristic(this.platform.Characteristic.Active, this.platform.Characteristic.Active.INACTIVE);
-      // // push the new value to HomeKit
-      // motionSensorOneService.updateCharacteristic(
-      //   this.platform.Characteristic.MotionDetected,
-      //   motionDetected,
-      // );
-      // motionSensorTwoService.updateCharacteristic(
-      //   this.platform.Characteristic.MotionDetected,
-      //   !motionDetected,
-      // );
+
     }, 10000);
   }
 
   async handleOnSetReboot(value: CharacteristicValue) {
-    this.platform.log.debug('Rebooting Wii U!')
+    this.platform.log.debug('Rebooting Wii U');
     axios.post('http://' + "192.168.1.195:8572" + "/reboot");
   }
-  /**
-   * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of an accessory, for example, turning on a Light bulb.
-   */
-  async setOn(value: CharacteristicValue) {
-    // implement your own code to turn your device on/off
-    this.exampleStates.On = value as boolean;
-    axios.post('http://' + "192.168.1.195:8572" + "/launch/menu");
 
-    this.platform.log.debug("Set Characteristic On ->", value);
+  async handleOnSetShutdown(value: CharacteristicValue) {
+    this.platform.log.debug('Shutting down Wii U');
+    axios.post('http://' + "192.168.1.195:8572" + "/shutdown");
   }
 
   /**
@@ -136,26 +87,15 @@ export class WiiUPlatformAccessory {
    * @example
    * this.service.updateCharacteristic(this.platform.Characteristic.On, true)
    */
-  async getOn(): Promise<CharacteristicValue> {
-    // implement your own code to check if the device is on
-    const isOn = this.exampleStates.On;
+  // async getOn(): Promise<CharacteristicValue> {
+  //   // implement your own code to check if the device is on
+  //   const isOn = true;
 
-    this.platform.log.debug("Get Characteristic On ->", isOn);
+  //   this.platform.log.debug("Get Characteristic On ->", isOn);
 
-    // if you need to return an error to show the device as "Not Responding" in the Home app:
-    // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+  //   // if you need to return an error to show the device as "Not Responding" in the Home app:
+  //   // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
 
-    return isOn;
-  }
-
-  /**
-   * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of an accessory, for example, changing the Brightness
-   */
-  async setBrightness(value: CharacteristicValue) {
-    // implement your own code to set the brightness
-    this.exampleStates.Brightness = value as number;
-
-    this.platform.log.debug("Set Characteristic Brightness -> ", value);
-  }
+  //   return isOn;
+  // }
 }
