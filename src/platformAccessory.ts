@@ -39,7 +39,7 @@ export class WiiUPlatformAccessory {
       .setCharacteristic(this.platform.Characteristic.Model, "Default-Model")
       .setCharacteristic(
         this.platform.Characteristic.SerialNumber,
-        "Default-Serial",
+        this.accessory.UUID,
       );
 
     // get the LightBulb service if it exists, otherwise create a new LightBulb service
@@ -47,6 +47,14 @@ export class WiiUPlatformAccessory {
     this.service =
       this.accessory.getService(this.platform.Service.Switch) ||
       this.accessory.addService(this.platform.Service.Switch);
+
+    // TODO: is there a better service that is just a "toggle switch?"
+    const rebootService =
+      this.accessory.getService("Reboot Console") ||
+      this.accessory.addService(this.platform.Service.Switch, 'Reboot Console', 'reboot-wiiu');
+
+    rebootService.setCharacteristic(this.platform.Characteristic.Name, 'Reboot Wii U');
+
 
     // set the service name, this is what is displayed as the default name on the Home app
     // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
@@ -69,6 +77,8 @@ export class WiiUPlatformAccessory {
       .getCharacteristic(this.platform.Characteristic.Brightness)
       .onSet(this.setBrightness.bind(this)); // SET - bind to the 'setBrightness` method below
 
+    rebootService.getCharacteristic(this.platform.Characteristic.On).onSet(this.handleOnSetReboot.bind(this));
+
     /**
      * Updating characteristics values asynchronously.
      *
@@ -83,6 +93,8 @@ export class WiiUPlatformAccessory {
       // EXAMPLE - inverse the trigger
       motionDetected = !motionDetected;
 
+      // FIXME: again: can we just get a push button for this or something?
+      rebootService.updateCharacteristic(this.platform.Characteristic.Active, this.platform.Characteristic.Active.INACTIVE);
       // // push the new value to HomeKit
       // motionSensorOneService.updateCharacteristic(
       //   this.platform.Characteristic.MotionDetected,
@@ -92,18 +104,13 @@ export class WiiUPlatformAccessory {
       //   this.platform.Characteristic.MotionDetected,
       //   !motionDetected,
       // );
-
-      this.platform.log.debug(
-        "Triggering motionSensorOneService:",
-        motionDetected,
-      );
-      this.platform.log.debug(
-        "Triggering motionSensorTwoService:",
-        !motionDetected,
-      );
     }, 10000);
   }
 
+  async handleOnSetReboot(value: CharacteristicValue) {
+    this.platform.log.debug('Rebooting Wii U!')
+    axios.post('http://' + "192.168.1.195:8572" + "/reboot");
+  }
   /**
    * Handle "SET" requests from HomeKit
    * These are sent when the user changes the state of an accessory, for example, turning on a Light bulb.

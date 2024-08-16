@@ -19,6 +19,7 @@ import { PLATFORM_NAME, PLUGIN_NAME } from "./settings.js";
  * parse the user config and discover/register accessories with Homebridge.
  */
 export class WiiUPlatform implements DynamicPlatformPlugin {
+  public DeviceSerial: string;
   public readonly Service: typeof Service;
   public readonly Characteristic: typeof Characteristic;
 
@@ -32,6 +33,7 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
   ) {
     this.Service = api.hap.Service;
     this.Characteristic = api.hap.Characteristic;
+    this.DeviceSerial = "";
 
     this.log.debug("Finished initializing platform:", this.config.name);
 
@@ -50,9 +52,15 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
    * This function is invoked when homebridge restores cached accessories from disk at startup.
    * It should be used to set up event handlers for characteristics and update respective values.
    */
-  configureAccessory(accessory: PlatformAccessory) {
+  async configureAccessory(accessory: PlatformAccessory) {
     this.log.info("Loading accessory from cache:", accessory.displayName);
 
+    let serial = ''
+    this.log.info("hi");
+    axios.post('http://' + "192.168.1.195:8572" + "/serial").then(function (response) {
+      serial = response.data.toString();
+    });
+    this.DeviceSerial = serial
     // add the restored accessory to the accessories cache, so we can track if it has already been registered
     this.accessories.push(accessory);
   }
@@ -81,7 +89,7 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
       let serial = ''
       this.log.info("hi");
       axios.post('http://' + device.exampleIP + "/serial").then(function (response) {
-        serial = response.data.toString();
+        serial = response.statusText;
       });
       const uuid = this.api.hap.uuid.generate(serial);
 
@@ -124,6 +132,7 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
         // store a copy of the device object in the `accessory.context`
         // the `context` property can be used to store any data about the accessory you may need
         accessory.context.device = device;
+        accessory.UUID = serial;
 
         // create the accessory handler for the newly create accessory
         // this is imported from `platformAccessory.ts`
