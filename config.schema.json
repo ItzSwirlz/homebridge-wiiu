@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "HomebridgeWiiUPlugin",
   "pluginType": "platform",
   "singular": true,
   "schema": {
