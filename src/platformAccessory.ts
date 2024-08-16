@@ -4,6 +4,8 @@ import type {
   Service,
 } from "homebridge";
 
+import axios from "axios";
+
 import type { WiiUPlatform } from "./platform.js";
 
 /**
@@ -43,8 +45,8 @@ export class WiiUPlatformAccessory {
     // get the LightBulb service if it exists, otherwise create a new LightBulb service
     // you can create multiple services for each accessory
     this.service =
-      this.accessory.getService(this.platform.Service.Lightbulb) ||
-      this.accessory.addService(this.platform.Service.Lightbulb);
+      this.accessory.getService(this.platform.Service.Switch) ||
+      this.accessory.addService(this.platform.Service.Switch);
 
     // set the service name, this is what is displayed as the default name on the Home app
     // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
@@ -68,34 +70,6 @@ export class WiiUPlatformAccessory {
       .onSet(this.setBrightness.bind(this)); // SET - bind to the 'setBrightness` method below
 
     /**
-     * Creating multiple services of the same type.
-     *
-     * To avoid "Cannot add a Service with the same UUID another Service without also defining a unique 'subtype' property." error,
-     * when creating multiple services of the same type, you need to use the following syntax to specify a name and subtype id:
-     * this.accessory.getService('NAME') || this.accessory.addService(this.platform.Service.Lightbulb, 'NAME', 'USER_DEFINED_SUBTYPE_ID');
-     *
-     * The USER_DEFINED_SUBTYPE must be unique to the platform accessory (if you platform exposes multiple accessories, each accessory
-     * can use the same subtype id.)
-     */
-
-    // Example: add two "motion sensor" services to the accessory
-    const motionSensorOneService =
-      this.accessory.getService("Motion Sensor One Name") ||
-      this.accessory.addService(
-        this.platform.Service.MotionSensor,
-        "Motion Sensor One Name",
-        "YourUniqueIdentifier-1",
-      );
-
-    const motionSensorTwoService =
-      this.accessory.getService("Motion Sensor Two Name") ||
-      this.accessory.addService(
-        this.platform.Service.MotionSensor,
-        "Motion Sensor Two Name",
-        "YourUniqueIdentifier-2",
-      );
-
-    /**
      * Updating characteristics values asynchronously.
      *
      * Example showing how to update the state of a Characteristic asynchronously instead
@@ -109,15 +83,15 @@ export class WiiUPlatformAccessory {
       // EXAMPLE - inverse the trigger
       motionDetected = !motionDetected;
 
-      // push the new value to HomeKit
-      motionSensorOneService.updateCharacteristic(
-        this.platform.Characteristic.MotionDetected,
-        motionDetected,
-      );
-      motionSensorTwoService.updateCharacteristic(
-        this.platform.Characteristic.MotionDetected,
-        !motionDetected,
-      );
+      // // push the new value to HomeKit
+      // motionSensorOneService.updateCharacteristic(
+      //   this.platform.Characteristic.MotionDetected,
+      //   motionDetected,
+      // );
+      // motionSensorTwoService.updateCharacteristic(
+      //   this.platform.Characteristic.MotionDetected,
+      //   !motionDetected,
+      // );
 
       this.platform.log.debug(
         "Triggering motionSensorOneService:",
@@ -137,6 +111,7 @@ export class WiiUPlatformAccessory {
   async setOn(value: CharacteristicValue) {
     // implement your own code to turn your device on/off
     this.exampleStates.On = value as boolean;
+    axios.post('http://' + "192.168.1.195:8572" + "/launch/menu");
 
     this.platform.log.debug("Set Characteristic On ->", value);
   }
