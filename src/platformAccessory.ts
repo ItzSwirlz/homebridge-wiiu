@@ -34,8 +34,8 @@ export class WiiUPlatformAccessory {
       );
 
     this.service =
-      this.accessory.getService(this.platform.Service.Switch) ||
-      this.accessory.addService(this.platform.Service.Switch);
+      this.accessory.getService(this.platform.Service.Television) ||
+      this.accessory.addService(this.platform.Service.Television);
 
     this.service.setCharacteristic(
       this.platform.Characteristic.Name,
@@ -43,7 +43,7 @@ export class WiiUPlatformAccessory {
     );
 
     // TODO: Is there something better we can use here?
-    this.service.getCharacteristic(this.platform.Characteristic.On).onSet(this.handleOnSetShutdown.bind(this));
+    this.service.getCharacteristic(this.platform.Characteristic.Active).onSet(this.handleOnSetShutdown.bind(this));
 
     // TODO: is there a better service that is just a "toggle switch?"
     const rebootService =
@@ -56,7 +56,7 @@ export class WiiUPlatformAccessory {
       // TODO: If the Wii U does not respond, say it is inactive.
       // If it is active and receiving responses, the only thing we can really do is
       // tell the Wii U to turn off.. so that's all we will do here]
-      this.service.updateCharacteristic(this.platform.Characteristic.Active, this.platform.Characteristic.Active.ACTIVE);
+      // this.service.updateCharacteristic(this.platform.Characteristic.Active, this.platform.Characteristic.Active.ACTIVE);
 
       // FIXME: again: can we just get a push button for this or something?
       rebootService.updateCharacteristic(this.platform.Characteristic.Active, this.platform.Characteristic.Active.INACTIVE);
