@@ -57,7 +57,7 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
 
     let serial = ''
     this.log.info("hi");
-    axios.post('http://' + "192.168.1.195:8572" + "/serial").then(function (response) {
+    axios.get('http://' + "192.168.1.195:8572" + "/serial").then(function (response) {
       serial = response.data.toString();
     });
     this.DeviceSerial = serial
@@ -87,7 +87,7 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
     for (const device of exampleDevices) {
       // use the device serial
       let serial = ''
-      axios.post('http://' + device.exampleIP + "/serial").then(function (response) {
+      axios.get('http://' + device.exampleIP + "/serial").then(function (response) {
         serial = response.statusText;
       });
       const uuid = this.api.hap.uuid.generate(serial);
