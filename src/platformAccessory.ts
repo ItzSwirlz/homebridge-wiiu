@@ -52,6 +52,10 @@ export class WiiUPlatformAccessory {
     rebootService.setCharacteristic(this.platform.Characteristic.Name, 'Reboot Wii U');
     rebootService.getCharacteristic(this.platform.Characteristic.On).onSet(this.handleOnSetReboot.bind(this));
 
+    const inputService =
+      this.accessory.getService("Current Application") ||
+      this.accessory.addService(this.platform.Service.InputSource, 'Current Application', 'application-wiiu');
+    inputService.setCharacteristic(this.platform.Characteristic.Name, 'Current Application');
     setInterval(() => {
       // TODO: If the Wii U does not respond, say it is inactive.
       // If it is active and receiving responses, the only thing we can really do is
@@ -60,7 +64,15 @@ export class WiiUPlatformAccessory {
 
       // FIXME: again: can we just get a push button for this or something?
       rebootService.updateCharacteristic(this.platform.Characteristic.Active, this.platform.Characteristic.Active.INACTIVE);
-
+      let currenttitle = ''
+      axios.get('http://' + "192.168.1.195:8572" + "/currenttitle").then(function (response) {
+        currenttitle = response.data.toString();
+      });
+      inputService.updateCharacteristic(this.platform.Characteristic.Name, currenttitle);
+      if(currenttitle === 'Wii U Menu') {
+        inputService.updateCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
+      }
+      // this.service.updateCharacteristic(this.platform.Characteristic.InputSourceType, "uhh");
     }, 10000);
   }
 
@@ -73,6 +85,10 @@ export class WiiUPlatformAccessory {
     this.platform.log.debug('Shutting down Wii U');
     axios.post('http://' + "192.168.1.195:8572" + "/shutdown");
   }
+
+  // async handleOnGetMediaState(value: CharacteristicValue) {
+  //   this.platform.log.debug("Updating Wii U media state");
+  // }
 
   /**
    * Handle the "GET" requests from HomeKit
