@@ -6,12 +6,12 @@ import type {
   PlatformAccessory,
   PlatformConfig,
   Service,
-} from "homebridge";
+} from 'homebridge';
 
-import axios from "axios";
+import axios from 'axios';
 
-import { WiiUPlatformAccessory } from "./platformAccessory.js";
-import { PLATFORM_NAME, PLUGIN_NAME } from "./settings.js";
+import { WiiUPlatformAccessory } from './platformAccessory.js';
+import { PLATFORM_NAME, PLUGIN_NAME } from './settings.js';
 
 /**
  * HomebridgePlatform
@@ -19,7 +19,6 @@ import { PLATFORM_NAME, PLUGIN_NAME } from "./settings.js";
  * parse the user config and discover/register accessories with Homebridge.
  */
 export class WiiUPlatform implements DynamicPlatformPlugin {
-  public DeviceSerial: string;
   public readonly Service: typeof Service;
   public readonly Characteristic: typeof Characteristic;
 
@@ -33,16 +32,15 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
   ) {
     this.Service = api.hap.Service;
     this.Characteristic = api.hap.Characteristic;
-    this.DeviceSerial = "";
 
-    this.log.debug("Finished initializing platform:", this.config.name);
+    this.log.debug('Finished initializing platform:', this.config.name);
 
     // When this event is fired it means Homebridge has restored all cached accessories from disk.
     // Dynamic Platform plugins should only register new accessories after this event was fired,
     // in order to ensure they weren't added to homebridge already. This event can also be used
     // to start discovery of new accessories.
-    this.api.on("didFinishLaunching", () => {
-      log.debug("Executed didFinishLaunching callback");
+    this.api.on('didFinishLaunching', () => {
+      log.debug('Executed didFinishLaunching callback');
       // run the method to discover / register your devices as accessories
       this.discoverDevices();
     });
@@ -53,14 +51,8 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
    * It should be used to set up event handlers for characteristics and update respective values.
    */
   async configureAccessory(accessory: PlatformAccessory) {
-    this.log.info("Loading accessory from cache:", accessory.displayName);
+    this.log.info('Loading accessory from cache:', accessory.displayName);
 
-    let serial = ''
-    this.log.info("hi");
-    axios.get('http://' + "192.168.1.195:8572" + "/serial").then(function (response) {
-      serial = response.data.toString();
-    });
-    this.DeviceSerial = serial
     // add the restored accessory to the accessories cache, so we can track if it has already been registered
     this.accessories.push(accessory);
   }
@@ -78,16 +70,16 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
     // for development purposes just using my own ip address.
     const exampleDevices = [
       {
-        exampleIP: "192.168.1.195:8572",
-        exampleDisplayName: "Wii U",
+        exampleIP: '192.168.1.195:8572',
+        exampleDisplayName: 'Wii U',
       },
     ];
 
     // loop over the discovered devices and register each one if it has not already been registered
     for (const device of exampleDevices) {
       // use the device serial
-      let serial = ''
-      axios.get('http://' + device.exampleIP + "/serial").then(function (response) {
+      let serial = '';
+      axios.get('http://' + device.exampleIP + '/serial').then((response) => {
         serial = response.statusText;
       });
       const uuid = this.api.hap.uuid.generate(serial);
@@ -101,7 +93,7 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
       if (existingAccessory) {
         // the accessory already exists
         this.log.info(
-          "Restoring existing accessory from cache:",
+          'Restoring existing accessory from cache:',
           existingAccessory.displayName,
         );
 
@@ -119,7 +111,7 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
         // this.log.info('Removing existing accessory from cache:', existingAccessory.displayName);
       } else {
         // the accessory does not yet exist, so we need to create it
-        this.log.info("Adding new accessory:", device.exampleDisplayName);
+        this.log.info('Adding new accessory:', device.exampleDisplayName);
 
         // create a new accessory
         const accessory = new this.api.platformAccessory(
