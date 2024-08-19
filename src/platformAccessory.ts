@@ -72,12 +72,16 @@ export class WiiUPlatformAccessory {
   // (unless you can somehow)
   async getSystemInfo() {
     const serial = await axios.get('http://' + '192.168.1.195:8572' + '/serial');
+    const model = await axios.get('http://' + '192.168.1.195:8572' + '/model');
     const version = await axios.get('http://' + '192.168.1.195:8572' + '/system_version');
     this.accessory
       .getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(
         this.platform.Characteristic.SerialNumber,
         serial.data as string,
+      ).setCharacteristic(
+        this.platform.Characteristic.Model,
+        model.data as string,
       ).setCharacteristic(
         this.platform.Characteristic.FirmwareRevision,
         version.data,
