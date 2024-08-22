@@ -5,6 +5,7 @@ import type {
 } from 'homebridge';
 
 import axios from 'axios';
+import fs from 'fs';
 
 import type { WiiUPlatform } from './platform.js';
 
@@ -50,11 +51,23 @@ export class WiiUPlatformAccessory {
     rebootService.setCharacteristic(this.platform.Characteristic.Name, 'Reboot Wii U');
     rebootService.getCharacteristic(this.platform.Characteristic.On).onSet(this.handleOnSetReboot.bind(this));
 
-    const inputService =
-      this.accessory.getService('Current Application') ||
-      this.accessory.addService(this.platform.Service.InputSource, 'Current Application', 'application-wiiu');
-    inputService.setCharacteristic(this.platform.Characteristic.Name, 'Current Application');
-    inputService.getCharacteristic(this.platform.Characteristic.InputSourceType).onGet(this.handleOnGetInputSource.bind(this));
+    // TODO: learn how to use plugin config
+    const getTitlesService =
+      this.accessory.getService('Get Titles') ||
+      this.accessory.addService(this.platform.Service.Switch, 'Get Titles', 'get-titles-wiiu');
+    getTitlesService.setCharacteristic(this.platform.Characteristic.Name, 'Get Titles');
+    getTitlesService.getCharacteristic(this.platform.Characteristic.On).onSet(this.handleOnGetTitles.bind(this));
+
+    // i think this is how you do it
+    const data = fs.readFileSync('./titles.json', 'utf-8');
+    const jsondata = JSON.parse(data);
+    JSON.parse(data, (item, index) => {
+      const service = this.accessory.getService(index + '-wiiu') || this.accessory.addService(this.platform.Service.InputSource, jsondata[index], index + '-wiiu');
+      service.setCharacteristic(this.platform.Characteristic.Identifier, index.toString());
+      service.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
+      service.setCharacteristic(this.platform.Characteristic.ConfiguredName, jsondata[item]);
+    });
+
     setInterval(() => {
       // TODO: If the Wii U does not respond, say it is inactive.
       // If it is active and receiving responses, the only thing we can really do is
@@ -63,8 +76,6 @@ export class WiiUPlatformAccessory {
 
       // FIXME: again: can we just get a push button for this or something?
       rebootService.updateCharacteristic(this.platform.Characteristic.Active, this.platform.Characteristic.Active.INACTIVE);
-      // this.service.updateCharacteristic(this.platform.Characteristic.InputSourceType, "uhh");
-      this.handleOnGetInputSource();
     }, 10000);
   }
 
@@ -93,23 +104,22 @@ export class WiiUPlatformAccessory {
     axios.post('http://' + '192.168.1.195:8572' + '/reboot');
   }
 
+  async handleOnGetTitles(value: CharacteristicValue) {
+    this.platform.log.debug('Getting Wii U titles');
+    try {
+      const res = await axios.get('http://' + '192.168.1.195:8572' + '/titles', {
+        responseType: 'json',
+      });
+
+      fs.writeFileSync('./titles.json', JSON.stringify(res.data, null, 2), 'utf-8');
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   async handleOnSetShutdown(value: CharacteristicValue) {
     this.platform.log.debug('Shutting down Wii U');
     axios.post('http://' + '192.168.1.195:8572' + '/shutdown');
-  }
-
-  async handleOnGetInputSource(): Promise<CharacteristicValue> {
-    const inputService =
-      this.accessory.getService('Current Application') ||
-      this.accessory.addService(this.platform.Service.InputSource, 'Current Application', 'application-wiiu');
-    this.platform.log.debug('Updating Wii U media state');
-    const currenttitle = await axios.get('http://' + '192.168.1.195:8572' + '/currenttitle');
-    inputService.updateCharacteristic(this.platform.Characteristic.Name, currenttitle.data);
-    if(currenttitle.data === 'Wii U Menu') {
-      inputService.updateCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
-      return this.platform.Characteristic.InputSourceType.HOME_SCREEN;
-    }
-    return this.platform.Characteristic.InputSourceType.APPLICATION;
   }
 
   /**
