@@ -48,7 +48,7 @@ export class WiiUPlatformAccessory {
     this.service.getCharacteristic(this.platform.Characteristic.ActiveIdentifier).onGet(this.handleGetTitle.bind(this));
     this.service.getCharacteristic(this.platform.Characteristic.ActiveIdentifier).onSet((newValue) => {
       const i: number = newValue as number;
-      axios.post('http://192.168.1.195:8572/launch/title', { title: this.titleMap.get(i) }, {
+      axios.post('http://' + this.platform.config.ip + '/launch/title', { title: this.titleMap.get(i) }, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -105,9 +105,9 @@ export class WiiUPlatformAccessory {
   // We can't do this in the constructor because this needs to await the response
   // (unless you can somehow)
   async getSystemInfo() {
-    const serial = await axios.get('http://' + '192.168.1.195:8572' + '/serial');
-    const model = await axios.get('http://' + '192.168.1.195:8572' + '/model');
-    const version = await axios.get('http://' + '192.168.1.195:8572' + '/system_version');
+    const serial = await axios.get('http://' + this.platform.config.ip + '/serial');
+    const model = await axios.get('http://' + this.platform.config.ip + '/model');
+    const version = await axios.get('http://' + this.platform.config.ip + '/system_version');
     this.accessory
       .getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(
@@ -124,13 +124,13 @@ export class WiiUPlatformAccessory {
 
   async handleOnSetReboot(value: CharacteristicValue) {
     this.platform.log.debug('Rebooting Wii U');
-    axios.post('http://' + '192.168.1.195:8572' + '/reboot');
+    axios.post('http://' + this.platform.config.ip + '/reboot');
   }
 
   async handleOnGetTitles(value: CharacteristicValue) {
     this.platform.log.debug('Getting Wii U titles');
     try {
-      const res = await axios.get('http://' + '192.168.1.195:8572' + '/titles', {
+      const res = await axios.get('http://' + this.platform.config.ip + '/titles', {
         responseType: 'json',
       });
 
@@ -142,7 +142,7 @@ export class WiiUPlatformAccessory {
 
   async handleGetTitle(): Promise<CharacteristicValue> {
     this.platform.log.debug('Getting Wii U title');
-    const title = await axios.get('http://' + '192.168.1.195:8572' + '/currenttitle');
+    const title = await axios.get('http://' + this.platform.config.ip + '/currenttitle');
     // FIXME: the title will always exist, so find a way to do this cleaner?
     const service = this.accessory.getService(title.data + '-wiiu') ||
       this.accessory.addService(this.platform.Service.InputSource, title.data.toString(), title.data + '-wiiu');

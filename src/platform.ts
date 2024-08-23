@@ -34,6 +34,7 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
     this.Characteristic = api.hap.Characteristic;
 
     this.log.debug('Finished initializing platform:', this.config.name);
+    this.log.debug('Using IP: ' + config.ip);
 
     // When this event is fired it means Homebridge has restored all cached accessories from disk.
     // Dynamic Platform plugins should only register new accessories after this event was fired,
@@ -80,7 +81,7 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
     for (const device of exampleDevices) {
       // use the device serial
       let serial = '';
-      axios.get('http://' + device.exampleIP + '/serial').then((response) => {
+      axios.get('http://' + this.config.ip + '/serial').then((response) => {
         serial = response.statusText;
       });
       const uuid = this.api.hap.uuid.generate(serial);
