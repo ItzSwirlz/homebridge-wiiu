@@ -16,6 +16,7 @@ import type { WiiUPlatform } from './platform.js';
  */
 export class WiiUPlatformAccessory {
   private service: Service;
+  private titleMap: Map<number, string>;
 
   constructor(
     private readonly platform: WiiUPlatform,
@@ -46,17 +47,21 @@ export class WiiUPlatformAccessory {
 
     this.service.getCharacteristic(this.platform.Characteristic.ActiveIdentifier).onGet(this.handleGetTitle.bind(this));
     this.service.getCharacteristic(this.platform.Characteristic.ActiveIdentifier).onSet((newValue) => {
-      console.log('fix me');
+      const i: number = newValue as number;
+      axios.post('http://192.168.1.195:8572/launch/title', { title: this.titleMap.get(i) }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
     });
 
     this.service.setCharacteristic(this.platform.Characteristic.SleepDiscoveryMode, this.platform.Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
 
     this.service.getCharacteristic(this.platform.Characteristic.RemoteKey).onSet((newValue) => {
-      console.log('e')
+      console.log('e');
     });
 
     this.getSystemInfo();
-    TODO: is there a better service that is just a "toggle switch?"
     const rebootService =
       this.accessory.getService('Reboot Console') ||
       this.accessory.addService(this.platform.Service.Switch, 'Reboot Console', 'reboot-wiiu');
@@ -70,17 +75,18 @@ export class WiiUPlatformAccessory {
     getTitlesService.setCharacteristic(this.platform.Characteristic.Name, 'Get Titles');
     getTitlesService.getCharacteristic(this.platform.Characteristic.On).onSet(this.handleOnGetTitles.bind(this));
 
+    this.titleMap = new Map<number, string>();
     // i think this is how you do it
     const data = fs.readFileSync('./titles.json', 'utf-8');
     const jsondata = JSON.parse(data);
-    let i = 1
+    let i = 1;
     JSON.parse(data, (titleId, name) => {
-      console.log(titleId);
-      console.log(name);
+      this.titleMap.set(i, titleId);
       const service = this.accessory.getService(name + '-wiiu') || this.accessory.addService(this.platform.Service.InputSource, jsondata[titleId], name + '-wiiu');
       service.setCharacteristic(this.platform.Characteristic.Identifier, i);
       service.setCharacteristic(this.platform.Characteristic.ConfiguredName, name);
       service.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
+      service.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
       this.service.addLinkedService(service);
       i++;
     });
