@@ -54,6 +54,7 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
     this.log.info('Loading accessory from cache:', accessory.displayName);
 
     // add the restored accessory to the accessories cache, so we can track if it has already been registered
+    accessory.category = this.api.hap.Categories.TELEVISION;
     this.accessories.push(accessory);
   }
 
@@ -99,6 +100,7 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
 
         // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. e.g.:
         existingAccessory.context.device = device;
+        existingAccessory.category = this.api.hap.Categories.TELEVISION;
         this.api.updatePlatformAccessories([existingAccessory]);
 
         // create the accessory handler for the restored accessory
@@ -121,6 +123,7 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
 
         // store a copy of the device object in the `accessory.context`
         // the `context` property can be used to store any data about the accessory you may need
+        accessory.category = this.api.hap.Categories.TELEVISION;
         accessory.context.device = device;
         accessory.UUID = serial;
 

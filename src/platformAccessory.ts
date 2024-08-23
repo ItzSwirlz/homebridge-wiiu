@@ -1,4 +1,4 @@
-import type {
+import {
   CharacteristicValue,
   PlatformAccessory,
   Service,
@@ -42,9 +42,21 @@ export class WiiUPlatformAccessory {
 
     // TODO: Is there something better we can use here?
     this.service.getCharacteristic(this.platform.Characteristic.Active).onSet(this.handleOnSetShutdown.bind(this));
+    this.service.setCharacteristic(this.platform.Characteristic.Active, 1);
+
+    this.service.getCharacteristic(this.platform.Characteristic.ActiveIdentifier).onGet(this.handleGetTitle.bind(this));
+    this.service.getCharacteristic(this.platform.Characteristic.ActiveIdentifier).onSet((newValue) => {
+      console.log('fix me');
+    });
+
+    this.service.setCharacteristic(this.platform.Characteristic.SleepDiscoveryMode, this.platform.Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
+
+    this.service.getCharacteristic(this.platform.Characteristic.RemoteKey).onSet((newValue) => {
+      console.log('e')
+    });
 
     this.getSystemInfo();
-    // TODO: is there a better service that is just a "toggle switch?"
+    TODO: is there a better service that is just a "toggle switch?"
     const rebootService =
       this.accessory.getService('Reboot Console') ||
       this.accessory.addService(this.platform.Service.Switch, 'Reboot Console', 'reboot-wiiu');
@@ -61,11 +73,16 @@ export class WiiUPlatformAccessory {
     // i think this is how you do it
     const data = fs.readFileSync('./titles.json', 'utf-8');
     const jsondata = JSON.parse(data);
-    JSON.parse(data, (item, index) => {
-      const service = this.accessory.getService(index + '-wiiu') || this.accessory.addService(this.platform.Service.InputSource, jsondata[index], index + '-wiiu');
-      service.setCharacteristic(this.platform.Characteristic.Identifier, index.toString());
+    let i = 1
+    JSON.parse(data, (titleId, name) => {
+      console.log(titleId);
+      console.log(name);
+      const service = this.accessory.getService(name + '-wiiu') || this.accessory.addService(this.platform.Service.InputSource, jsondata[titleId], name + '-wiiu');
+      service.setCharacteristic(this.platform.Characteristic.Identifier, i);
+      service.setCharacteristic(this.platform.Characteristic.ConfiguredName, name);
       service.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
-      service.setCharacteristic(this.platform.Characteristic.ConfiguredName, jsondata[item]);
+      this.service.addLinkedService(service);
+      i++;
     });
 
     setInterval(() => {
@@ -75,7 +92,7 @@ export class WiiUPlatformAccessory {
       // this.service.updateCharacteristic(this.platform.Characteristic.Active, this.platform.Characteristic.Active.ACTIVE);
 
       // FIXME: again: can we just get a push button for this or something?
-      rebootService.updateCharacteristic(this.platform.Characteristic.Active, this.platform.Characteristic.Active.INACTIVE);
+      // rebootService.updateCharacteristic(this.platform.Characteristic.Active, this.platform.Characteristic.Active.INACTIVE);
     }, 10000);
   }
 
@@ -117,9 +134,22 @@ export class WiiUPlatformAccessory {
     }
   }
 
+  async handleGetTitle(): Promise<CharacteristicValue> {
+    this.platform.log.debug('Getting Wii U title');
+    const title = await axios.get('http://' + '192.168.1.195:8572' + '/currenttitle');
+    // FIXME: the title will always exist, so find a way to do this cleaner?
+    const service = this.accessory.getService(title.data + '-wiiu') ||
+      this.accessory.addService(this.platform.Service.InputSource, title.data.toString(), title.data + '-wiiu');
+    return service.getCharacteristic(this.platform.Characteristic.Identifier).value || 1;
+  }
+
   async handleOnSetShutdown(value: CharacteristicValue) {
     this.platform.log.debug('Shutting down Wii U');
-    axios.post('http://' + '192.168.1.195:8572' + '/shutdown');
+    // axios.post('http://' + '192.168.1.195:8572' + '/shutdown');
+  }
+
+  async handleRemoteKey(value: CharacteristicValue) {
+
   }
 
   /**
