@@ -105,21 +105,25 @@ export class WiiUPlatformAccessory {
   // We can't do this in the constructor because this needs to await the response
   // (unless you can somehow)
   async getSystemInfo() {
-    const serial = await axios.get('http://' + this.platform.config.ip + '/device/serial_id');
-    const model = await axios.get('http://' + this.platform.config.ip + '/device/model_number');
-    const version = await axios.get('http://' + this.platform.config.ip + '/device/version');
-    this.accessory
-      .getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(
-        this.platform.Characteristic.SerialNumber,
-        serial.data as string,
-      ).setCharacteristic(
-        this.platform.Characteristic.Model,
-        model.data as string,
-      ).setCharacteristic(
-        this.platform.Characteristic.FirmwareRevision,
-        version.data,
-      );
+    try {
+      const serial = await axios.get('http://' + this.platform.config.ip + '/device/serial_id');
+      const model = await axios.get('http://' + this.platform.config.ip + '/device/model_number');
+      const version = await axios.get('http://' + this.platform.config.ip + '/device/version');
+      this.accessory
+        .getService(this.platform.Service.AccessoryInformation)!
+        .setCharacteristic(
+          this.platform.Characteristic.SerialNumber,
+          serial.data as string,
+        ).setCharacteristic(
+          this.platform.Characteristic.Model,
+          model.data as string,
+        ).setCharacteristic(
+          this.platform.Characteristic.FirmwareRevision,
+          version.data,
+        );
+    } catch (error) {
+      console.error('Failed to get Wii U system info.');
+    }
   }
 
   async handleOnSetReboot(value: CharacteristicValue) {
@@ -142,24 +146,27 @@ export class WiiUPlatformAccessory {
 
   async handleGetTitle(): Promise<CharacteristicValue> {
     this.platform.log.debug('Getting Wii U title');
-    const title = await axios.get('http://' + this.platform.config.ip + '/title/current');
-    // FIXME: the title will always exist, so find a way to do this cleaner?
-    const service = this.accessory.getService(title.data + '-wiiu') ||
-      this.accessory.addService(this.platform.Service.InputSource, title.data.toString(), title.data + '-wiiu');
-    if(title.status === 200) {
-      this.service.setCharacteristic(this.platform.Characteristic.Active, 1);
-    } else {
+    try {
+      const title = await axios.get('http://' + this.platform.config.ip + '/title/current');
+
+      // FIXME: the title will always exist, so find a way to do this cleaner?
+      const service = this.accessory.getService(title.data + '-wiiu') ||
+        this.accessory.addService(this.platform.Service.InputSource, title.data.toString(), title.data + '-wiiu');
+      return service.getCharacteristic(this.platform.Characteristic.Identifier).value || 1;
+    } catch (error) {
       this.service.setCharacteristic(this.platform.Characteristic.Active, 0);
+      return 0;
     }
-    return service.getCharacteristic(this.platform.Characteristic.Identifier).value || 1;
   }
 
   async handleOnSetShutdown(value: CharacteristicValue) {
-    if (value === this.platform.Characteristic.Active.INACTIVE) {
+    if (value === this.platform.Characteristic.Active.ACTIVE) {
       return;
     }
     this.platform.log.debug('Shutting down Wii U');
-    axios.post('http://' + '192.168.1.195:8572' + '/power/shutdown');
+    axios.post('http://' + '192.168.1.195:8572' + '/power/shutdown').catch((error) => {
+      console.log('Failed to shutdown Wii U');
+    });
   }
 
   async handleRemoteKey(value: CharacteristicValue) {

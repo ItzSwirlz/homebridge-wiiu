@@ -83,6 +83,8 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
       let serial = '';
       axios.get('http://' + this.config.ip + '/device/serial_id').then((response) => {
         serial = response.statusText;
+      }).catch((error) => {
+        return; // device is offline
       });
       const uuid = this.api.hap.uuid.generate(serial);
 
