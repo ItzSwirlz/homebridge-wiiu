@@ -105,9 +105,9 @@ export class WiiUPlatformAccessory {
   // We can't do this in the constructor because this needs to await the response
   // (unless you can somehow)
   async getSystemInfo() {
-    const serial = await axios.get('http://' + this.platform.config.ip + '/serial');
-    const model = await axios.get('http://' + this.platform.config.ip + '/model');
-    const version = await axios.get('http://' + this.platform.config.ip + '/system_version');
+    const serial = await axios.get('http://' + this.platform.config.ip + '/device/serial_id');
+    const model = await axios.get('http://' + this.platform.config.ip + '/device/model_number');
+    const version = await axios.get('http://' + this.platform.config.ip + '/device/version');
     this.accessory
       .getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(
@@ -124,13 +124,13 @@ export class WiiUPlatformAccessory {
 
   async handleOnSetReboot(value: CharacteristicValue) {
     this.platform.log.debug('Rebooting Wii U');
-    axios.post('http://' + this.platform.config.ip + '/reboot');
+    axios.post('http://' + this.platform.config.ip + '/power/reboot');
   }
 
   async handleOnGetTitles(value: CharacteristicValue) {
     this.platform.log.debug('Getting Wii U titles');
     try {
-      const res = await axios.get('http://' + this.platform.config.ip + '/titles', {
+      const res = await axios.get('http://' + this.platform.config.ip + '/title/list', {
         responseType: 'json',
       });
 
@@ -142,16 +142,24 @@ export class WiiUPlatformAccessory {
 
   async handleGetTitle(): Promise<CharacteristicValue> {
     this.platform.log.debug('Getting Wii U title');
-    const title = await axios.get('http://' + this.platform.config.ip + '/currenttitle');
+    const title = await axios.get('http://' + this.platform.config.ip + '/title/current');
     // FIXME: the title will always exist, so find a way to do this cleaner?
     const service = this.accessory.getService(title.data + '-wiiu') ||
       this.accessory.addService(this.platform.Service.InputSource, title.data.toString(), title.data + '-wiiu');
+    if(title.status === 200) {
+      this.service.setCharacteristic(this.platform.Characteristic.Active, 1);
+    } else {
+      this.service.setCharacteristic(this.platform.Characteristic.Active, 0);
+    }
     return service.getCharacteristic(this.platform.Characteristic.Identifier).value || 1;
   }
 
   async handleOnSetShutdown(value: CharacteristicValue) {
+    if (value === this.platform.Characteristic.Active.INACTIVE) {
+      return;
+    }
     this.platform.log.debug('Shutting down Wii U');
-    // axios.post('http://' + '192.168.1.195:8572' + '/shutdown');
+    axios.post('http://' + '192.168.1.195:8572' + '/power/shutdown');
   }
 
   async handleRemoteKey(value: CharacteristicValue) {
