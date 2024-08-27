@@ -121,6 +121,7 @@ export class WiiUPlatformAccessory {
           this.platform.Characteristic.FirmwareRevision,
           version.data,
         );
+      this.service.setCharacteristic(this.platform.Characteristic.Active, 1); // Device must be on at this point
     } catch (error) {
       console.error('Failed to get Wii U system info.');
     }
@@ -152,6 +153,7 @@ export class WiiUPlatformAccessory {
       // FIXME: the title will always exist, so find a way to do this cleaner?
       const service = this.accessory.getService(title.data + '-wiiu') ||
         this.accessory.addService(this.platform.Service.InputSource, title.data.toString(), title.data + '-wiiu');
+      this.service.setCharacteristic(this.platform.Characteristic.Active, 1); // Device must be on at this point
       return service.getCharacteristic(this.platform.Characteristic.Identifier).value || 1;
     } catch (error) {
       this.service.setCharacteristic(this.platform.Characteristic.Active, 0);
