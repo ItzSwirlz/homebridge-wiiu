@@ -66,17 +66,20 @@ export class WiiUPlatformAccessory {
     const jsondata = JSON.parse(data);
 
     JSON.parse(data, (titleId, name) => {
-      i++;
-      this.titleMap.set(i, titleId);
+      // Sometimes seems to pop up
+      if (titleId !== '') {
+        i++;
+        this.titleMap.set(i, titleId);
 
-      const service = this.accessory.getService(name + '-wiiu') ||
-        this.accessory.addService(this.platform.Service.InputSource, jsondata[titleId], name + '-wiiu');
+        const service = this.accessory.getService(name + '-wiiu') ||
+          this.accessory.addService(this.platform.Service.InputSource, jsondata[titleId], name + '-wiiu');
 
-      service.setCharacteristic(this.platform.Characteristic.Identifier, i);
-      service.setCharacteristic(this.platform.Characteristic.ConfiguredName, name.toString());
-      service.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
-      service.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
-      this.service.addLinkedService(service);
+        service.setCharacteristic(this.platform.Characteristic.Identifier, i);
+        service.setCharacteristic(this.platform.Characteristic.ConfiguredName, name);
+        service.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
+        service.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
+        this.service.addLinkedService(service);
+      }
     });
 
     setInterval(() => {
@@ -142,6 +145,7 @@ export class WiiUPlatformAccessory {
     this.platform.log.debug('Getting Wii U title');
     try {
       const title = await axios.get('http://' + this.platform.config.ip + '/title/current');
+      this.platform.log.debug('Received title from Ristretto: ' + title.data);
 
       // FIXME: the title will always exist, so find a way to do this cleaner without the || 1
       const service = this.accessory.getService(title.data + '-wiiu') ||
