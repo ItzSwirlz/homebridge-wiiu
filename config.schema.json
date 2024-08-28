@@ -10,6 +10,12 @@
         "type": "string",
         "required": true,
         "default": "192.168.1.195:8572"
+      },
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "required": true,
+        "default": "Wii U"
       }
     }
   }

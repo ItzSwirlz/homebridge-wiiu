@@ -65,80 +65,63 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
    * must not be registered again to prevent "duplicate UUID" errors.
    */
   async discoverDevices() {
-    // EXAMPLE ONLY
-    // A real plugin you would discover accessories from the local network, cloud services
-    // or a user-defined array in the platform config.
-    // FIXME: dont use hardcoded addresses if possible
-    // for development purposes just using my own ip address.
-    const exampleDevices = [
-      {
-        exampleIP: '192.168.1.195:8572',
-        exampleDisplayName: 'Wii U',
-      },
-    ];
+    // use the device serial
+    let serial = '';
+    axios.get('http://' + this.config.ip + '/device/serial_id').then((response) => {
+      serial = response.statusText;
+    }).catch((error) => {
+      return; // device is offline
+    });
+    const uuid = this.api.hap.uuid.generate(serial);
 
-    // loop over the discovered devices and register each one if it has not already been registered
-    for (const device of exampleDevices) {
-      // use the device serial
-      let serial = '';
-      axios.get('http://' + this.config.ip + '/device/serial_id').then((response) => {
-        serial = response.statusText;
-      }).catch((error) => {
-        return; // device is offline
-      });
-      const uuid = this.api.hap.uuid.generate(serial);
+    // see if an accessory with the same uuid has already been registered and restored from
+    // the cached devices we stored in the `configureAccessory` method above
+    const existingAccessory = this.accessories.find(
+      (accessory) => accessory.UUID === uuid,
+    );
 
-      // see if an accessory with the same uuid has already been registered and restored from
-      // the cached devices we stored in the `configureAccessory` method above
-      const existingAccessory = this.accessories.find(
-        (accessory) => accessory.UUID === uuid,
+    if (existingAccessory) {
+      // the accessory already exists
+      this.log.info(
+        'Restoring existing accessory from cache:',
+        existingAccessory.displayName,
       );
 
-      if (existingAccessory) {
-        // the accessory already exists
-        this.log.info(
-          'Restoring existing accessory from cache:',
-          existingAccessory.displayName,
-        );
+      // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. e.g.:
+      existingAccessory.category = this.api.hap.Categories.TELEVISION;
+      this.api.updatePlatformAccessories([existingAccessory]);
 
-        // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. e.g.:
-        existingAccessory.context.device = device;
-        existingAccessory.category = this.api.hap.Categories.TELEVISION;
-        this.api.updatePlatformAccessories([existingAccessory]);
+      // create the accessory handler for the restored accessory
+      // this is imported from `platformAccessory.ts`
+      new WiiUPlatformAccessory(this, existingAccessory);
 
-        // create the accessory handler for the restored accessory
-        // this is imported from `platformAccessory.ts`
-        new WiiUPlatformAccessory(this, existingAccessory);
+      // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, e.g.:
+      // remove platform accessories when no longer present
+      // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
+      // this.log.info('Removing existing accessory from cache:', existingAccessory.displayName);
+    } else {
+      // the accessory does not yet exist, so we need to create it
+      this.log.info('Adding new accessory:', this.config.name);
 
-        // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, e.g.:
-        // remove platform accessories when no longer present
-        // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
-        // this.log.info('Removing existing accessory from cache:', existingAccessory.displayName);
-      } else {
-        // the accessory does not yet exist, so we need to create it
-        this.log.info('Adding new accessory:', device.exampleDisplayName);
+      // create a new accessory
+      const accessory = new this.api.platformAccessory(
+        this.config.name || 'Wii U',
+        uuid,
+      );
 
-        // create a new accessory
-        const accessory = new this.api.platformAccessory(
-          device.exampleDisplayName,
-          uuid,
-        );
+      // store a copy of the device object in the `accessory.context`
+      // the `context` property can be used to store any data about the accessory you may need
+      accessory.category = this.api.hap.Categories.TELEVISION;
+      accessory.UUID = serial;
 
-        // store a copy of the device object in the `accessory.context`
-        // the `context` property can be used to store any data about the accessory you may need
-        accessory.category = this.api.hap.Categories.TELEVISION;
-        accessory.context.device = device;
-        accessory.UUID = serial;
+      // create the accessory handler for the newly create accessory
+      // this is imported from `platformAccessory.ts`
+      new WiiUPlatformAccessory(this, accessory);
 
-        // create the accessory handler for the newly create accessory
-        // this is imported from `platformAccessory.ts`
-        new WiiUPlatformAccessory(this, accessory);
-
-        // link the accessory to your platform
-        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
-          accessory,
-        ]);
-      }
+      // link the accessory to your platform
+      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
+        accessory,
+      ]);
     }
   }
 }

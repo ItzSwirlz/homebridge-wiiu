@@ -28,8 +28,7 @@ export class WiiUPlatformAccessory {
       .setCharacteristic(
         this.platform.Characteristic.Manufacturer,
         'Nintendo', // i dont think any wii u will have any other value
-      )
-      .setCharacteristic(this.platform.Characteristic.Model, 'Default-Model');
+      );
 
     this.service =
       this.accessory.getService(this.platform.Service.Television) ||
@@ -38,7 +37,7 @@ export class WiiUPlatformAccessory {
 
     this.service.setCharacteristic(
       this.platform.Characteristic.Name,
-      accessory.context.device.exampleDisplayName,
+      this.platform.config.name || 'Wii U',
     );
 
     // TODO: Is there something better we can use here?
@@ -84,7 +83,7 @@ export class WiiUPlatformAccessory {
       this.titleMap.set(i, titleId);
       const service = this.accessory.getService(name + '-wiiu') || this.accessory.addService(this.platform.Service.InputSource, jsondata[titleId], name + '-wiiu');
       service.setCharacteristic(this.platform.Characteristic.Identifier, i);
-      service.setCharacteristic(this.platform.Characteristic.ConfiguredName, name);
+      service.setCharacteristic(this.platform.Characteristic.ConfiguredName, name.toString());
       service.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
       service.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
       this.service.addLinkedService(service);
@@ -106,20 +105,20 @@ export class WiiUPlatformAccessory {
   // (unless you can somehow)
   async getSystemInfo() {
     try {
-      const serial = await axios.get('http://' + this.platform.config.ip + '/device/serial_id');
-      const model = await axios.get('http://' + this.platform.config.ip + '/device/model_number');
-      const version = await axios.get('http://' + this.platform.config.ip + '/device/version');
+      const serial = (await axios.get('http://' + this.platform.config.ip + '/device/serial_id')).data;
+      const model = (await axios.get('http://' + this.platform.config.ip + '/device/model_number')).data;
+      const version = (await axios.get('http://' + this.platform.config.ip + '/device/version')).data;
       this.accessory
         .getService(this.platform.Service.AccessoryInformation)!
         .setCharacteristic(
           this.platform.Characteristic.SerialNumber,
-          serial.data as string,
+          serial.toString(),
         ).setCharacteristic(
           this.platform.Characteristic.Model,
-          model.data as string,
+          model.toString(),
         ).setCharacteristic(
           this.platform.Characteristic.FirmwareRevision,
-          version.data,
+          version,
         );
       this.service.setCharacteristic(this.platform.Characteristic.Active, 1); // Device must be on at this point
     } catch (error) {
