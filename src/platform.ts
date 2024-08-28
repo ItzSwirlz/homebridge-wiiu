@@ -11,7 +11,7 @@ import type {
 import axios from 'axios';
 
 import { WiiUPlatformAccessory } from './platformAccessory.js';
-import { PLATFORM_NAME, PLUGIN_NAME } from './settings.js';
+import { PLUGIN_NAME } from './settings.js';
 
 /**
  * HomebridgePlatform
@@ -119,10 +119,7 @@ export class WiiUPlatform implements DynamicPlatformPlugin {
       // this is imported from `platformAccessory.ts`
       new WiiUPlatformAccessory(this, accessory);
 
-      // link the accessory to your platform
-      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
-        accessory,
-      ]);
+      this.api.publishExternalAccessories(PLUGIN_NAME, [accessory]);
     }
   }
 }
