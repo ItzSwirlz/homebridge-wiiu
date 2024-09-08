@@ -52,11 +52,8 @@ export class WiiUPlatformAccessory {
       });
     });
 
-    const getTitlesService =
-      this.accessory.getService('Get Titles') ||
-      this.accessory.addService(this.platform.Service.Switch, 'Get Titles', 'get-titles-wiiu');
-    getTitlesService.setCharacteristic(this.platform.Characteristic.Name, 'Get Titles');
-    getTitlesService.getCharacteristic(this.platform.Characteristic.On).onSet(this.handleOnGetTitles.bind(this));
+    // Get the title list every time we start up
+    this.getTitles();
 
     // Refresh the title list
     this.titleMap = new Map<number, string>();
@@ -118,11 +115,7 @@ export class WiiUPlatformAccessory {
     }
   }
 
-  async handleOnGetTitles(value: CharacteristicValue) {
-    if(value === this.platform.Characteristic.Active.INACTIVE) {
-      return;
-    }
-
+  async getTitles() {
     this.platform.log.debug('Getting Wii U titles');
 
     try {
@@ -133,12 +126,6 @@ export class WiiUPlatformAccessory {
     } catch (error) {
       this.platform.log.error('Error occurred trying to get the Wii U title list.');
     }
-
-    // Treat this like a push button: this is more a utility than anything.
-    const getTitlesService =
-      this.accessory.getService('Get Titles') ||
-      this.accessory.addService(this.platform.Service.Switch, 'Get Titles', 'get-titles-wiiu');
-    getTitlesService.updateCharacteristic(this.platform.Characteristic.On, 0);
   }
 
   async handleGetTitle(): Promise<CharacteristicValue> {

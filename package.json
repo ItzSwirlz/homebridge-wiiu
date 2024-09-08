@@ -4,10 +4,10 @@
   "type": "module",
   "version": "1.0.0",
   "private": true,
-  "description": "Homebridge plugin for Wii U with Smart Espresso Aroma plugin (name TBD)",
+  "description": "Homebridge plugin for Wii U with Ristretto Aroma plugin",
   "author": "Joshua Peisach",
-  "license": "Apache-2.0",
-  "homepage": "https://github.com/ItzSwirlz/homebridge-wiiu/blob/latest/README.md",
+  "license": "LGPL-3.0-or-later",
+  "homepage": "https://github.com/ItzSwirlz/homebridge-wiiu/",
   "repository": {
     "type": "git",
     "url": "https://github.com/ItzSwirlz/homebridge-wiiu.git"
@@ -16,7 +16,10 @@
     "url": "https://github.com/ItzSwirlz/homebridge-wiiu/issues"
   },
   "keywords": [
-    "homebridge-plugin"
+    "homebridge-plugin",
+    "homebridge-wiiu",
+    "ristretto",
+    "wiiu"
   ],
   "main": "dist/index.js",
   "engines": {
