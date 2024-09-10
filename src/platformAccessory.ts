@@ -85,6 +85,7 @@ export class WiiUPlatformAccessory {
         this.platform.log.debug('Received response from Ristretto: ' + response.data);
         this.service.updateCharacteristic(this.platform.Characteristic.Active, this.platform.Characteristic.Active.ACTIVE);
       }).catch((error) => {
+        this.platform.log.error('Error requesting data from Ristretto');
         this.platform.log.debug(error);
         this.service.updateCharacteristic(this.platform.Characteristic.Active, this.platform.Characteristic.Active.INACTIVE);
       });
@@ -111,7 +112,8 @@ export class WiiUPlatformAccessory {
           version,
         );
     } catch (error) {
-      this.platform.log('Failed to get Wii U system info.');
+      this.platform.log.error('Failed to get Wii U system info.');
+      this.platform.log.debug(error as string);
     }
   }
 
@@ -140,7 +142,8 @@ export class WiiUPlatformAccessory {
 
       return service.getCharacteristic(this.platform.Characteristic.Identifier).value || 1;
     } catch (error) {
-      this.platform.log('Couldn\'t get the current title.');
+      this.platform.log.error('Couldn\'t get the current title.');
+      this.platform.log.debug(error as string);
       return 0;
     }
   }
@@ -152,7 +155,8 @@ export class WiiUPlatformAccessory {
 
     this.platform.log.debug('Shutting down Wii U');
     axios.post('http://' + '192.168.1.195:8572' + '/power/shutdown').catch((error) => {
-      this.platform.log.error('Failed to shutdown Wii U: ' + error);
+      this.platform.log.error('Failed to shutdown Wii U');
+      this.platform.log.debug(error);
     });
   }
 }
