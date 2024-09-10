@@ -3,7 +3,6 @@
   "displayName": "Homebridge Wii U Plugin",
   "type": "module",
   "version": "1.0.0",
-  "private": true,
   "description": "Homebridge plugin for Wii U with Ristretto Aroma plugin",
   "author": "Joshua Peisach",
   "license": "LGPL-3.0-or-later",
