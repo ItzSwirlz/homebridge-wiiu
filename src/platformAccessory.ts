@@ -42,6 +42,7 @@ export class WiiUPlatformAccessory {
     this.getSystemInfo();
 
     this.service.getCharacteristic(this.platform.Characteristic.Active).onSet(this.handleOnSetShutdown.bind(this));
+    this.service.getCharacteristic(this.platform.Characteristic.RemoteKey).onSet(this.handleOnSetRemoteKey.bind(this));
 
     this.service.getCharacteristic(this.platform.Characteristic.ActiveIdentifier).onGet(this.handleGetTitle.bind(this));
     this.service.getCharacteristic(this.platform.Characteristic.ActiveIdentifier).onSet((newValue) => {
@@ -156,6 +157,43 @@ export class WiiUPlatformAccessory {
     this.platform.log.debug('Shutting down Wii U');
     axios.post('http://' + '192.168.1.195:8572' + '/power/shutdown').catch((error) => {
       this.platform.log.error('Failed to shutdown Wii U');
+      this.platform.log.debug(error);
+    });
+  }
+
+  // TODO: figure out what to assign other buttons to
+  // Note that the HOME button doesn't do anything on key press
+  async handleOnSetRemoteKey(value: CharacteristicValue) {
+    let key = ''; // we will use this to send the specific key to press
+    switch(value) {
+    case this.platform.Characteristic.RemoteKey.SELECT:
+      key = '32768'; // 0x8000 (A)
+      break;
+    case this.platform.Characteristic.RemoteKey.BACK:
+      key = '16384'; // 0x4000 (B)
+      break;
+    case this.platform.Characteristic.RemoteKey.ARROW_LEFT:
+      key = '2048'; // 0x0800 (D-Pad left)
+      break;
+    case this.platform.Characteristic.RemoteKey.ARROW_RIGHT:
+      key = '1024'; // 0x0400 (D-Pad right)
+      break;
+    case this.platform.Characteristic.RemoteKey.ARROW_UP:
+      key = '512'; // 0x0200 (D-Pad up)
+      break;
+    case this.platform.Characteristic.RemoteKey.ARROW_DOWN:
+      key = '256'; // 0x0100 (D-Pad down)
+      break;
+    default:
+      this.platform.log('Unhandled value for Remote Key: ' + value);
+      break;
+    }
+    axios.post('http://' + this.platform.config.ip + '/remote/key', { button: key }, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }).catch((error) => {
+      this.platform.log.error('Error pressing remote key to Ristretto');
       this.platform.log.debug(error);
     });
   }
