@@ -80,6 +80,11 @@ export class WiiUPlatformAccessory {
       }
     });
 
+    const batteryService = this.accessory.getService('GamePad Battery') ||
+      this.accessory.addService(this.platform.Service.Battery, 'GamePad Battery', 'wiiu-gamepad-battery');
+    batteryService.setCharacteristic(this.platform.Characteristic.Name, 'GamePad Battery');
+    batteryService.getCharacteristic(this.platform.Characteristic.BatteryLevel).onGet(this.handleOnGetGamePadBattery.bind(this));
+
     setInterval(() => {
       // If an error occurs, mark the device as offline.
       axios.get('http://' + this.platform.config.ip + '/').then((response) => {
@@ -144,6 +149,32 @@ export class WiiUPlatformAccessory {
       return service.getCharacteristic(this.platform.Characteristic.Identifier).value || 1;
     } catch (error) {
       this.platform.log.error('Couldn\'t get the current title.');
+      this.platform.log.debug(error as string);
+      return 0;
+    }
+  }
+
+  async handleOnGetGamePadBattery(): Promise<CharacteristicValue> {
+    try {
+      const battery = await axios.get('http://' + this.platform.config.ip + '/gamepad/battery');
+
+      const service = this.accessory.getService('GamePad Battery') ||
+        this.accessory.addService(this.platform.Service.Battery, 'GamePad Battery', 'wiiu-gamepad-battery');
+
+      if(battery.data === 0) {
+        // TODO: Check to see if the values are correct
+        // Always 0 when the GamePad is on the dock or is charging????
+        // just return 'full charge on battery level'
+        service.setCharacteristic(this.platform.Characteristic.ChargingState, this.platform.Characteristic.ChargingState.CHARGING);
+        return 100;
+      } else {
+        service.setCharacteristic(this.platform.Characteristic.ChargingState, this.platform.Characteristic.ChargingState.NOT_CHARGING);
+      }
+
+      // level is up to 6
+      return (battery.data / 6) * 100;
+    } catch (error) {
+      this.platform.log.error('Couldn\'t get GamePad battery.');
       this.platform.log.debug(error as string);
       return 0;
     }
