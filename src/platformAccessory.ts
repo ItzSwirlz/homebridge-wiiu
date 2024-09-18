@@ -154,7 +154,7 @@ export class WiiUPlatformAccessory {
     }
 
     this.platform.log.debug('Shutting down Wii U');
-    axios.post('http://' + '192.168.1.195:8572' + '/power/shutdown').catch((error) => {
+    axios.post('http://' + this.platform.config.ip + '/power/shutdown').catch((error) => {
       this.platform.log.error('Failed to shutdown Wii U');
       this.platform.log.debug(error);
     });
