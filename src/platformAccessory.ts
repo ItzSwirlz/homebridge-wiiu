@@ -46,11 +46,43 @@ export class WiiUPlatformAccessory {
 
     this.service.getCharacteristic(this.platform.Characteristic.ActiveIdentifier).onGet(this.handleGetTitle.bind(this));
     this.service.getCharacteristic(this.platform.Characteristic.ActiveIdentifier).onSet((newValue) => {
-      axios.post('http://' + this.platform.config.ip + '/launch/title', { title: this.titleMap.get(newValue as number) }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      switch (newValue as number) {
+      // For things that arent exposed as titles
+      case 1:
+        axios.post('http://' + this.platform.config.ip + '/launch/settings/internet');
+        break;
+      case 2:
+        axios.post('http://' + this.platform.config.ip + '/launch/settings/data_management');
+        break;
+      case 3:
+        axios.post('http://' + this.platform.config.ip + '/launch/settings/tv_remote');
+        break;
+      case 4:
+        axios.post('http://' + this.platform.config.ip + '/launch/settings/date_time');
+        break;
+      case 5:
+        axios.post('http://' + this.platform.config.ip + '/launch/settings/country');
+        break;
+      case 6:
+        axios.post('http://' + this.platform.config.ip + '/launch/settings/quick_start');
+        break;
+      case 7:
+        axios.post('http://' + this.platform.config.ip + '/launch/settings/tv_connection');
+        break;
+      case 8:
+        axios.post('http://' + this.platform.config.ip + '/vwii/launch/menu');
+        break;
+      case 9:
+        axios.post('http://' + this.platform.config.ip + '/vwii/launch/data_manager');
+        break;
+      default:
+        axios.post('http://' + this.platform.config.ip + '/launch/title', { title: this.titleMap.get(newValue as number) }, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        break;
+      }
     });
 
     // Get the title list every time we start up
@@ -62,6 +94,99 @@ export class WiiUPlatformAccessory {
     let i = 1;
     const data = fs.readFileSync('./titles.json', 'utf-8');
     const jsondata = JSON.parse(data);
+
+    // predefined endpoints. thsee are constant identifier values
+    const internetSettingsService = this.accessory.getService('internetSettingsService-wiiu') ||
+      this.accessory.addService(this.platform.Service.InputSource, 'Internet Settings', 'internetSettingsService-wiiu');
+
+    internetSettingsService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    internetSettingsService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Internet Settings');
+    internetSettingsService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
+    internetSettingsService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
+    this.service.addLinkedService(internetSettingsService);
+    i++;
+
+    const dataManagementService = this.accessory.getService('dataManagementService-wiiu') ||
+      this.accessory.addService(this.platform.Service.InputSource, 'Data Management', 'dataManagementService-wiiu');
+
+    dataManagementService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    dataManagementService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Data Management');
+    dataManagementService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
+    dataManagementService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
+    this.service.addLinkedService(dataManagementService);
+    i++;
+
+    const tvRemoteSettingsService = this.accessory.getService('tvRemoteSettingsService-wiiu') ||
+      this.accessory.addService(this.platform.Service.InputSource, 'GamePad TV Remote Settings', 'tvRemoteSettingsService-wiiu');
+
+    tvRemoteSettingsService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    tvRemoteSettingsService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'GamePad TV Remote Settings');
+    tvRemoteSettingsService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
+    tvRemoteSettingsService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
+    this.service.addLinkedService(tvRemoteSettingsService);
+    i++;
+
+    const dtSettingsService = this.accessory.getService('dtSettingsService-wiiu') ||
+      this.accessory.addService(this.platform.Service.InputSource, 'Date and Time Settings', 'dtSettingsService-wiiu');
+
+    dtSettingsService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    dtSettingsService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Date and Time Settings');
+    dtSettingsService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
+    dtSettingsService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
+    this.service.addLinkedService(dtSettingsService);
+    i++;
+
+    const countrySettingsService = this.accessory.getService('countrySettingsService-wiiu') ||
+      this.accessory.addService(this.platform.Service.InputSource, 'Country Settings', 'countrySettingsService-wiiu');
+
+    countrySettingsService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    countrySettingsService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Country Settings');
+    countrySettingsService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
+    countrySettingsService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
+    this.service.addLinkedService(countrySettingsService);
+    i++;
+
+    const quickStartSettingsService = this.accessory.getService('quickStartSettingsService-wiiu') ||
+      this.accessory.addService(this.platform.Service.InputSource, 'Quick Start Settings', 'quickStartSettingsService-wiiu');
+
+    quickStartSettingsService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    quickStartSettingsService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Quick Start Settings');
+    quickStartSettingsService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
+    quickStartSettingsService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
+    this.service.addLinkedService(quickStartSettingsService);
+    i++;
+
+    const tvConnectionService = this.accessory.getService('tvConnectionService-wiiu') ||
+      this.accessory.addService(this.platform.Service.InputSource, 'TV Connection Settings', 'tvConnectionService-wiiu');
+
+    tvConnectionService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    tvConnectionService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'TV Connection Settings');
+    tvConnectionService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
+    tvConnectionService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
+    this.service.addLinkedService(tvConnectionService);
+    i++;
+
+    const vWiiMenuService = this.accessory.getService('vWiiMenuService-wiiu') ||
+      this.accessory.addService(this.platform.Service.InputSource, 'vWii Menu', 'vWiiMenuService-wiiu');
+
+    vWiiMenuService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    vWiiMenuService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'vWii Menu');
+    vWiiMenuService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
+    vWiiMenuService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
+    this.service.addLinkedService(vWiiMenuService);
+    i++;
+
+    const vWiiDataManagerService = this.accessory.getService('vWiiDataManagerService-wiiu') ||
+      this.accessory.addService(this.platform.Service.InputSource, 'vWii Data Management', 'vWiiDataManagerService-wiiu');
+
+    vWiiDataManagerService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    vWiiDataManagerService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'vWii Data Management');
+    vWiiDataManagerService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
+    vWiiDataManagerService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
+    this.service.addLinkedService(vWiiDataManagerService);
+    i++;
+
+    // end of apps that dont have title ids
 
     JSON.parse(data, (titleId, name) => {
       // Sometimes seems to pop up
@@ -198,32 +323,28 @@ export class WiiUPlatformAccessory {
     let key = ''; // we will use this to send the specific key to press
     switch(value) {
     case this.platform.Characteristic.RemoteKey.SELECT:
-      key = '32768'; // 0x8000 (A)
+      key = 'a';
       break;
     case this.platform.Characteristic.RemoteKey.BACK:
-      key = '16384'; // 0x4000 (B)
+      key = 'b';
       break;
     case this.platform.Characteristic.RemoteKey.ARROW_LEFT:
-      key = '2048'; // 0x0800 (D-Pad left)
+      key = 'left';
       break;
     case this.platform.Characteristic.RemoteKey.ARROW_RIGHT:
-      key = '1024'; // 0x0400 (D-Pad right)
+      key = 'right';
       break;
     case this.platform.Characteristic.RemoteKey.ARROW_UP:
-      key = '512'; // 0x0200 (D-Pad up)
+      key = 'up';
       break;
     case this.platform.Characteristic.RemoteKey.ARROW_DOWN:
-      key = '256'; // 0x0100 (D-Pad down)
+      key = 'down';
       break;
     default:
       this.platform.log('Unhandled value for Remote Key: ' + value);
       break;
     }
-    axios.post('http://' + this.platform.config.ip + '/remote/key', { button: key }, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }).catch((error) => {
+    axios.post('http://' + this.platform.config.ip + '/remote/key/' + key).catch((error) => {
       this.platform.log.error('Error pressing remote key to Ristretto');
       this.platform.log.debug(error);
     });
