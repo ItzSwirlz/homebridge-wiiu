@@ -1,6 +1,8 @@
 <p align="center">
 
 <img src="https://github.com/homebridge/branding/raw/latest/logos/homebridge-wordmark-logo-vertical.png" width="150">
+<hr class="solid">
+<img src=./.github/icon.png>
 
 </p>
 
