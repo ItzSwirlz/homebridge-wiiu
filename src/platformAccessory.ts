@@ -27,7 +27,7 @@ export class WiiUPlatformAccessory {
       .getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(
         this.platform.Characteristic.Manufacturer,
-        'Nintendo', // i dont think any wii u will have any other value
+        'Nintendo',
       );
 
     this.service =
@@ -47,7 +47,7 @@ export class WiiUPlatformAccessory {
     this.service.getCharacteristic(this.platform.Characteristic.ActiveIdentifier).onGet(this.handleGetTitle.bind(this));
     this.service.getCharacteristic(this.platform.Characteristic.ActiveIdentifier).onSet((newValue) => {
       switch (newValue as number) {
-      // For things that arent exposed as titles
+      // For subsettings menus: they aren't exposed as separate titles so we "make them" ourselves
       case 1:
         axios.post('http://' + this.platform.config.ip + '/launch/settings/internet');
         break;
@@ -91,116 +91,122 @@ export class WiiUPlatformAccessory {
     // Refresh the title list
     this.titleMap = new Map<number, string>();
 
-    let i = 1;
+    let identifierId = 1;
+    if (!fs.existsSync('./titles.json')) {
+      fs.writeFileSync('./titles.json', '{}');
+    }
     const data = fs.readFileSync('./titles.json', 'utf-8');
-    const jsondata = JSON.parse(data);
 
     // predefined endpoints. thsee are constant identifier values
     const internetSettingsService = this.accessory.getService('internetSettingsService-wiiu') ||
       this.accessory.addService(this.platform.Service.InputSource, 'Internet Settings', 'internetSettingsService-wiiu');
 
-    internetSettingsService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    internetSettingsService.setCharacteristic(this.platform.Characteristic.Identifier, identifierId);
     internetSettingsService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Internet Settings');
     internetSettingsService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
     internetSettingsService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
     this.service.addLinkedService(internetSettingsService);
-    i++;
+    identifierId++;
 
     const dataManagementService = this.accessory.getService('dataManagementService-wiiu') ||
       this.accessory.addService(this.platform.Service.InputSource, 'Data Management', 'dataManagementService-wiiu');
 
-    dataManagementService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    dataManagementService.setCharacteristic(this.platform.Characteristic.Identifier, identifierId);
     dataManagementService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Data Management');
     dataManagementService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
     dataManagementService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
     this.service.addLinkedService(dataManagementService);
-    i++;
+    identifierId++;
 
     const tvRemoteSettingsService = this.accessory.getService('tvRemoteSettingsService-wiiu') ||
       this.accessory.addService(this.platform.Service.InputSource, 'GamePad TV Remote Settings', 'tvRemoteSettingsService-wiiu');
 
-    tvRemoteSettingsService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    tvRemoteSettingsService.setCharacteristic(this.platform.Characteristic.Identifier, identifierId);
     tvRemoteSettingsService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'GamePad TV Remote Settings');
     tvRemoteSettingsService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
     tvRemoteSettingsService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
     this.service.addLinkedService(tvRemoteSettingsService);
-    i++;
+    identifierId++;
 
     const dtSettingsService = this.accessory.getService('dtSettingsService-wiiu') ||
       this.accessory.addService(this.platform.Service.InputSource, 'Date and Time Settings', 'dtSettingsService-wiiu');
 
-    dtSettingsService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    dtSettingsService.setCharacteristic(this.platform.Characteristic.Identifier, identifierId);
     dtSettingsService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Date and Time Settings');
     dtSettingsService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
     dtSettingsService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
     this.service.addLinkedService(dtSettingsService);
-    i++;
+    identifierId++;
 
     const countrySettingsService = this.accessory.getService('countrySettingsService-wiiu') ||
       this.accessory.addService(this.platform.Service.InputSource, 'Country Settings', 'countrySettingsService-wiiu');
 
-    countrySettingsService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    countrySettingsService.setCharacteristic(this.platform.Characteristic.Identifier, identifierId);
     countrySettingsService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Country Settings');
     countrySettingsService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
     countrySettingsService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
     this.service.addLinkedService(countrySettingsService);
-    i++;
+    identifierId++;
 
     const quickStartSettingsService = this.accessory.getService('quickStartSettingsService-wiiu') ||
       this.accessory.addService(this.platform.Service.InputSource, 'Quick Start Settings', 'quickStartSettingsService-wiiu');
 
-    quickStartSettingsService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    quickStartSettingsService.setCharacteristic(this.platform.Characteristic.Identifier, identifierId);
     quickStartSettingsService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Quick Start Settings');
     quickStartSettingsService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
     quickStartSettingsService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
     this.service.addLinkedService(quickStartSettingsService);
-    i++;
+    identifierId++;
 
     const tvConnectionService = this.accessory.getService('tvConnectionService-wiiu') ||
       this.accessory.addService(this.platform.Service.InputSource, 'TV Connection Settings', 'tvConnectionService-wiiu');
 
-    tvConnectionService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    tvConnectionService.setCharacteristic(this.platform.Characteristic.Identifier, identifierId);
     tvConnectionService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'TV Connection Settings');
     tvConnectionService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
     tvConnectionService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
     this.service.addLinkedService(tvConnectionService);
-    i++;
+    identifierId++;
 
     const vWiiMenuService = this.accessory.getService('vWiiMenuService-wiiu') ||
       this.accessory.addService(this.platform.Service.InputSource, 'vWii Menu', 'vWiiMenuService-wiiu');
 
-    vWiiMenuService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    vWiiMenuService.setCharacteristic(this.platform.Characteristic.Identifier, identifierId);
     vWiiMenuService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'vWii Menu');
     vWiiMenuService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
     vWiiMenuService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
     this.service.addLinkedService(vWiiMenuService);
-    i++;
+    identifierId++;
 
     const vWiiDataManagerService = this.accessory.getService('vWiiDataManagerService-wiiu') ||
       this.accessory.addService(this.platform.Service.InputSource, 'vWii Data Management', 'vWiiDataManagerService-wiiu');
 
-    vWiiDataManagerService.setCharacteristic(this.platform.Characteristic.Identifier, i);
+    vWiiDataManagerService.setCharacteristic(this.platform.Characteristic.Identifier, identifierId);
     vWiiDataManagerService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'vWii Data Management');
     vWiiDataManagerService.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
     vWiiDataManagerService.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
     this.service.addLinkedService(vWiiDataManagerService);
-    i++;
+    identifierId++;
 
     // end of apps that dont have title ids
 
+    // For each title, we need to assign them an "identifeir ID" for homebridge
     JSON.parse(data, (titleId, name) => {
-      // Sometimes seems to pop up
+      // Broken titles or applications - can occur when there is no equivalent translated name.
       if (titleId !== '') {
-        i++;
-        this.titleMap.set(i, titleId);
+        identifierId++;
+        this.titleMap.set(identifierId, titleId);
 
         const service = this.accessory.getService(name + '-wiiu') ||
-          this.accessory.addService(this.platform.Service.InputSource, jsondata[titleId], name + '-wiiu');
+          this.accessory.addService(this.platform.Service.InputSource, name, name + '-wiiu');
 
-        service.setCharacteristic(this.platform.Characteristic.Identifier, i);
+        service.setCharacteristic(this.platform.Characteristic.Identifier, identifierId);
         service.setCharacteristic(this.platform.Characteristic.ConfiguredName, name);
         service.setCharacteristic(this.platform.Characteristic.IsConfigured, 1);
         service.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.APPLICATION);
+        if(name === 'Wii U Menu') {
+          service.setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.HOME_SCREEN);
+        }
         this.service.addLinkedService(service);
       }
     });
